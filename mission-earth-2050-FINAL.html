@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mission: Earth 2050 — Planetary Intelligence System</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=JetBrains+Mono:wght@300;400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #03080f;
+  --bg2: #060f1a;
+  --bg3: #0a1628;
+  --accent: #00e5ff;
+  --accent2: #7b2fff;
+  --green: #00ff88;
+  --warn: #ffaa00;
+  --danger: #ff2d55;
+  --text: #d0e8ff;
+  --muted: #3a5a7a;
+  --card: rgba(6,15,26,0.9);
+  --border: rgba(0,229,255,0.12);
+  --border2: rgba(123,47,255,0.15);
+  --glow: 0 0 30px rgba(0,229,255,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Syne',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* CUSTOM CURSOR */
+#cursor{position:fixed;width:20px;height:20px;border:1.5px solid var(--accent);border-radius:50%;pointer-events:none;z-index:99999;transition:transform 0.1s;mix-blend-mode:difference}
+#cursor-dot{position:fixed;width:4px;height:4px;background:var(--accent);border-radius:50%;pointer-events:none;z-index:99999;transform:translate(-50%,-50%)}
+
+/* BACKGROUND */
+#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+/* NOISE OVERLAY */
+body::before{
+  content:'';position:fixed;top:0;left:0;right:0;bottom:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:1;opacity:0.4;
+}
+
+.app{position:relative;z-index:2;max-width:1280px;margin:0 auto;padding:0 28px 100px}
+
+/* ── HEADER ── */
+.header{
+  padding:52px 0 40px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  margin-bottom:48px;
+}
+.logo-area{flex:1}
+.logo-tag{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;letter-spacing:4px;color:var(--accent);
+  margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;
+}
+.logo-tag::before{content:'';width:24px;height:1px;background:var(--accent)}
+h1{
+  font-family:'Orbitron',sans-serif;
+  font-size:clamp(22px,4vw,48px);
+  font-weight:900;
+  letter-spacing:-1px;
+  background:linear-gradient(135deg,#fff 0%,var(--accent) 50%,var(--accent2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  opacity:0;animation:riseIn 0.8s 0.3s forwards;
+}
+.header-stats{
+  display:flex;gap:24px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;color:var(--muted);
+}
+.hstat{text-align:center}
+.hstat-num{font-size:18px;color:var(--accent);font-weight:500;display:block}
+
+/* ── SEARCH ── */
+.search-wrap{
+  max-width:700px;margin:0 auto 48px;
+  opacity:0;animation:riseIn 0.7s 0.5s forwards;
+}
+.search-inner{
+  display:flex;gap:0;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:var(--glow);
+  transition:box-shadow 0.3s,border-color 0.3s;
+}
+.search-inner:focus-within{
+  border-color:rgba(0,229,255,0.4);
+  box-shadow:0 0 60px rgba(0,229,255,0.12),0 0 0 1px rgba(0,229,255,0.2);
+}
+.search-inner select{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--text);font-family:'Syne',sans-serif;font-size:15px;
+  padding:18px 24px;cursor:pointer;
+  border-right:1px solid var(--border);
+}
+.search-inner select option{background:#060f1a}
+.btn-scan{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#000;border:none;padding:0 36px;
+  font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:2px;cursor:pointer;
+  transition:opacity 0.2s,transform 0.2s;
+  white-space:nowrap;
+}
+.btn-scan:hover{opacity:0.9;transform:scale(1.01)}
+.btn-scan:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+
+.demo-row{
+  display:flex;align-items:center;gap:12px;justify-content:center;
+  margin-top:16px;flex-wrap:wrap;
+}
+.demo-label-txt{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:3px}
+.dbtn{
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+  color:var(--text);border-radius:8px;padding:7px 16px;
+  font-size:12px;cursor:pointer;transition:all 0.2s;font-family:'Syne',sans-serif;
+}
+.dbtn:hover{background:rgba(0,229,255,0.08);border-color:var(--accent);color:var(--accent)}
+
+/* ── LOADING ── */
+#loading{display:none;text-align:center;padding:80px 0}
+.scan-ring{position:relative;width:80px;height:80px;margin:0 auto 24px}
+.scan-ring::before,.scan-ring::after{
+  content:'';position:absolute;border-radius:50%;
+}
+.scan-ring::before{
+  inset:0;border:2px solid rgba(0,229,255,0.1);
+  border-top-color:var(--accent);
+  animation:spin 1s linear infinite;
+}
+.scan-ring::after{
+  inset:12px;border:2px solid rgba(123,47,255,0.2);
+  border-bottom-color:var(--accent2);
+  animation:spin 0.7s linear infinite reverse;
+}
+.scan-txt{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);letter-spacing:3px}
+.scan-log{margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);height:16px}
+
+/* ── ERROR ── */
+#error-box{display:none;background:rgba(255,45,85,0.08);border:1px solid rgba(255,45,85,0.25);
+border-radius:12px;padding:20px;text-align:center;margin:32px 0;
+color:var(--danger);font-family:'JetBrains Mono',monospace;font-size:12px}
+
+/* ── RESULTS ── */
+#results{display:none;opacity:0;animation:riseIn 0.6s forwards}
+
+/* COUNTRY BAR */
+.country-bar{
+  display:flex;align-items:center;gap:20px;
+  padding:24px 28px;
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  margin-bottom:28px;backdrop-filter:blur(12px);
+  position:relative;overflow:hidden;
+}
+.country-bar::after{
+  content:'';position:absolute;right:0;top:0;bottom:0;width:200px;
+  background:linear-gradient(90deg,transparent,rgba(0,229,255,0.03));
+  pointer-events:none;
+}
+.cb-flag{font-size:52px;filter:drop-shadow(0 0 20px rgba(0,229,255,0.3))}
+.cb-info h2{font-family:'Orbitron',sans-serif;font-size:26px;font-weight:700;color:#fff}
+.cb-info p{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:1px}
+.cb-right{margin-left:auto;display:flex;gap:16px}
+.cb-tag{
+  padding:6px 14px;border-radius:6px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;
+  border:1px solid;
+}
+.tag-live{color:var(--green);border-color:rgba(0,255,136,0.3);background:rgba(0,255,136,0.06)}
+.tag-year{color:var(--accent);border-color:rgba(0,229,255,0.3);background:rgba(0,229,255,0.06)}
+
+/* ── MAIN GRID ── */
+.grid-top{display:grid;grid-template-columns:300px 1fr 280px;gap:20px;margin-bottom:20px}
+@media(max-width:1024px){.grid-top{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.grid-top{grid-template-columns:1fr}}
+
+/* CARD BASE */
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:18px;padding:24px;backdrop-filter:blur(16px);
+  box-shadow:var(--glow);
+  position:relative;overflow:hidden;
+}
+.card-title{
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  letter-spacing:3px;color:var(--muted);text-transform:uppercase;
+  margin-bottom:20px;display:flex;align-items:center;gap:8px;
+}
+.card-title .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 8px var(--accent);animation:pulse 2s infinite}
+
+/* SCORE CARD */
+.score-card{text-align:center}
+.gauge-outer{position:relative;width:190px;height:190px;margin:0 auto 16px}
+.gauge-svg{width:100%;height:100%;transform:rotate(-90deg)}
+.g-track{fill:none;stroke:rgba(255,255,255,0.04);stroke-width:14}
+.g-fill{fill:none;stroke-width:14;stroke-linecap:round;
+  stroke-dasharray:502;stroke-dashoffset:502;
+  transition:stroke-dashoffset 2s cubic-bezier(0.34,1.3,0.64,1)}
+.gauge-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.g-num{font-family:'Orbitron',sans-serif;font-size:52px;font-weight:900;line-height:1}
+.g-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);margin-top:2px}
+
+.risk-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 20px;border-radius:99px;
+  font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;
+  margin-bottom:16px;border:1px solid;
+}
+.risk-pill .pip{width:6px;height:6px;border-radius:50%;animation:pulse 1.5s infinite}
+.rlow{color:var(--green);border-color:rgba(0,255,136,0.3);background:rgba(0,255,136,0.07)}
+.rlow .pip{background:var(--green);box-shadow:0 0 8px var(--green)}
+.rmod{color:var(--warn);border-color:rgba(255,170,0,0.3);background:rgba(255,170,0,0.07)}
+.rmod .pip{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+.rhigh{color:var(--danger);border-color:rgba(255,45,85,0.3);background:rgba(255,45,85,0.07)}
+.rhigh .pip{background:var(--danger);box-shadow:0 0 8px var(--danger)}
+
+.sub-scores{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px}
+.ss-box{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 6px;text-align:center}
+.ss-num{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700}
+.ss-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px;margin-top:3px}
+
+/* ACCELERATION BADGE */
+.accel-badge{
+  margin-top:14px;padding:10px 16px;border-radius:10px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  text-align:left;line-height:1.6;
+  background:rgba(0,229,255,0.04);border:1px solid rgba(0,229,255,0.12);
+}
+.accel-title{font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:4px}
+.accel-val{font-size:15px;font-weight:600}
+
+/* METRICS PANEL */
+.metrics-panel{}
+.metric-row{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.04);
+  transition:background 0.2s;cursor:default;
+}
+.metric-row:last-child{border-bottom:none}
+.metric-row:hover{background:rgba(0,229,255,0.02);margin:0 -8px;padding:14px 8px;border-radius:8px}
+.mr-icon{font-size:22px;width:36px;text-align:center;flex-shrink:0}
+.mr-body{flex:1;min-width:0}
+.mr-name{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:3px}
+.mr-val{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:600;color:#fff;white-space:nowrap}
+.mr-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.mr-right{width:90px;flex-shrink:0}
+.sparkline-canvas{width:90px!important;height:28px!important}
+.mr-bar-bg{height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;margin-top:4px}
+.mr-bar-fill{height:100%;border-radius:2px;width:0;transition:width 1.5s cubic-bezier(0.34,1.2,0.64,1)}
+
+/* RANK PANEL */
+.rank-panel{}
+.rank-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04);
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+}
+.rank-item:last-child{border-bottom:none}
+.rank-pos{width:24px;text-align:center;color:var(--muted);font-size:10px}
+.rank-flag{font-size:16px}
+.rank-name{flex:1;font-size:11px;color:var(--text)}
+.rank-score{font-size:13px;font-weight:600}
+.rank-bar-wrap{width:50px}
+.rank-bar{height:2px;border-radius:1px;background:var(--accent);transition:width 1s ease}
+.rank-item.current-country{
+  background:rgba(0,229,255,0.06);
+  margin:0 -8px;padding:9px 8px;border-radius:8px;
+  border:1px solid rgba(0,229,255,0.15)!important;
+}
+.rank-item.current-country .rank-name{color:var(--accent)}
+
+/* ── SECOND ROW ── */
+.grid-mid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+@media(max-width:760px){.grid-mid{grid-template-columns:1fr}}
+
+/* RADAR CHART */
+.radar-card{}
+#radarChart{max-height:260px}
+
+/* TREND CARD */
+.trend-card{}
+#trendChart{max-height:260px}
+
+/* ── BOTTOM ROW ── */
+.grid-bot{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:20px}
+@media(max-width:900px){.grid-bot{grid-template-columns:1fr}}
+
+/* CLIMATE STRESS */
+.stress-meter{margin:12px 0}
+.stress-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.stress-icon{font-size:18px;width:30px;text-align:center}
+.stress-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);flex:1}
+.stress-num{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;width:32px;text-align:right}
+.stress-bar-bg{height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;flex:1}
+.stress-bar-fill{height:100%;border-radius:2px;width:0;transition:width 1.5s ease}
+
+.csi-total{
+  margin-top:16px;padding:14px;
+  background:linear-gradient(135deg,rgba(0,229,255,0.05),rgba(123,47,255,0.05));
+  border:1px solid rgba(0,229,255,0.15);border-radius:12px;
+  text-align:center;
+}
+.csi-total-num{font-family:'Orbitron',sans-serif;font-size:32px;font-weight:900;color:var(--accent)}
+.csi-total-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);margin-top:2px}
+
+/* COMPARISON CARD */
+.compare-tabs{display:flex;gap:6px;margin-bottom:16px}
+.ctab{
+  flex:1;padding:7px;text-align:center;border-radius:8px;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;
+  border:1px solid rgba(255,255,255,0.07);
+  transition:all 0.2s;color:var(--muted);
+}
+.ctab.active{background:rgba(0,229,255,0.1);border-color:var(--accent);color:var(--accent)}
+.compare-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 0;font-family:'JetBrains Mono',monospace;font-size:11px;
+  border-bottom:1px solid rgba(255,255,255,0.03);
+}
+.compare-item:last-child{border-bottom:none}
+.ci-label{color:var(--muted);width:80px;font-size:10px}
+.ci-val{font-size:12px;font-weight:600}
+.ci-delta{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:4px}
+.delta-pos{color:var(--green);background:rgba(0,255,136,0.08)}
+.delta-neg{color:var(--danger);background:rgba(255,45,85,0.08)}
+.delta-neu{color:var(--muted);background:rgba(255,255,255,0.04)}
+
+/* 2050 PROJECTION */
+.proj-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.proj-yr{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--muted);width:40px}
+.proj-bar-bg{flex:1;height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden}
+.proj-bar-fill{height:100%;border-radius:3px;width:0;transition:width 1.5s ease}
+.proj-num{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;width:32px;text-align:right}
+.proj-trend{font-size:14px;margin-left:4px}
+
+/* NARRATIVE */
+.narrative-card{
+  margin-bottom:20px;
+  background:linear-gradient(135deg,rgba(0,229,255,0.03),rgba(123,47,255,0.03));
+  border:1px solid rgba(0,229,255,0.15);border-radius:18px;
+  padding:28px 32px;backdrop-filter:blur(16px);
+  position:relative;overflow:hidden;
+}
+.narrative-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),transparent);
+}
+.narrative-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.ai-indicator{display:flex;align-items:center;gap:8px}
+.ai-pulse{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);animation:pulse 2s infinite}
+.ai-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--accent)}
+.nar-timestamp{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted)}
+#narrative-text{
+  font-size:15px;line-height:1.9;color:#a0c4e0;
+  font-family:'Syne',sans-serif;
+}
+#narrative-text strong{color:#fff}
+#narrative-text .highlight{color:var(--accent)}
+#narrative-text .warn-text{color:var(--warn)}
+#narrative-text .danger-text{color:var(--danger)}
+
+/* POLICY RECS */
+.policy-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:20px}
+@media(max-width:760px){.policy-grid{grid-template-columns:1fr}}
+.policy-card{
+  background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);
+  border-radius:12px;padding:14px;
+}
+.policy-icon{font-size:20px;margin-bottom:8px}
+.policy-title{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:4px}
+.policy-text{font-size:12px;line-height:1.5;color:var(--text)}
+
+/* FOOTER */
+footer{
+  text-align:center;padding-top:40px;border-top:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);
+  letter-spacing:2px;line-height:2;
+}
+.footer-apis{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.fapi{color:var(--accent);opacity:0.6;font-size:9px}
+
+/* ANIMATIONS */
+@keyframes riseIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+@keyframes shimmer{0%{opacity:0.5}50%{opacity:1}100%{opacity:0.5}}
+
+.stagger-1{opacity:0;animation:riseIn 0.6s 0.1s forwards}
+.stagger-2{opacity:0;animation:riseIn 0.6s 0.2s forwards}
+.stagger-3{opacity:0;animation:riseIn 0.6s 0.3s forwards}
+.stagger-4{opacity:0;animation:riseIn 0.6s 0.4s forwards}
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-dot"></div>
+<canvas id="bg-canvas"></canvas>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo-area">
+      <div class="logo-tag">PLANETARY INTELLIGENCE SYSTEM v3.0</div>
+      <h1>MISSION: EARTH 2050</h1>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><span class="hstat-num" id="h-countries">20</span>NATIONS</div>
+      <div class="hstat"><span class="hstat-num">3</span>LIVE APIs</div>
+      <div class="hstat"><span class="hstat-num" id="h-time">--:--</span>UTC</div>
+    </div>
+  </header>
+
+  <!-- SEARCH -->
+  <div class="search-wrap">
+    <div class="search-inner">
+      <select id="country-select">
+        <option value="">— Select Nation to Analyze —</option>
+        <option value="NO">🇳🇴 Norway</option>
+        <option value="DE">🇩🇪 Germany</option>
+        <option value="AU">🇦🇺 Australia</option>
+        <option value="CA">🇨🇦 Canada</option>
+        <option value="GB">🇬🇧 United Kingdom</option>
+        <option value="FR">🇫🇷 France</option>
+        <option value="JP">🇯🇵 Japan</option>
+        <option value="US">🇺🇸 United States</option>
+        <option value="RU">🇷🇺 Russia</option>
+        <option value="CN">🇨🇳 China</option>
+        <option value="MX">🇲🇽 Mexico</option>
+        <option value="BR">🇧🇷 Brazil</option>
+        <option value="SA">🇸🇦 Saudi Arabia</option>
+        <option value="ZA">🇿🇦 South Africa</option>
+        <option value="IN">🇮🇳 India</option>
+        <option value="ID">🇮🇩 Indonesia</option>
+        <option value="EG">🇪🇬 Egypt</option>
+        <option value="PK">🇵🇰 Pakistan</option>
+        <option value="NG">🇳🇬 Nigeria</option>
+        <option value="BD">🇧🇩 Bangladesh</option>
+      </select>
+      <button class="btn-scan" onclick="analyze()" id="scan-btn">⚡ SCAN PLANET</button>
+    </div>
+    <div class="demo-row">
+      <span class="demo-label-txt">// QUICK SCAN:</span>
+      <button class="dbtn" onclick="quickDemo('NO')">🇳🇴 Norway</button>
+      <button class="dbtn" onclick="quickDemo('DE')">🇩🇪 Germany</button>
+      <button class="dbtn" onclick="quickDemo('IN')">🇮🇳 India</button>
+      <button class="dbtn" onclick="quickDemo('CN')">🇨🇳 China</button>
+      <button class="dbtn" onclick="quickDemo('NG')">🇳🇬 Nigeria</button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loading">
+    <div class="scan-ring"></div>
+    <p class="scan-txt">SCANNING PLANETARY DATA</p>
+    <p class="scan-log" id="scan-log">// Initializing...</p>
+  </div>
+
+  <div id="error-box"></div>
+
+  <!-- RESULTS -->
+  <div id="results">
+
+    <!-- Country Bar -->
+    <div class="country-bar stagger-1">
+      <div class="cb-flag" id="cb-flag">🌍</div>
+      <div class="cb-info">
+        <h2 id="cb-name">—</h2>
+        <p id="cb-sub">Capital • Population • Region</p>
+      </div>
+      <div class="cb-right">
+        <div class="cb-tag tag-live">● LIVE DATA</div>
+        <div class="cb-tag tag-year">2025 → 2050</div>
+      </div>
+    </div>
+
+    <!-- TOP GRID -->
+    <div class="grid-top stagger-2">
+
+      <!-- SCORE CARD -->
+      <div class="card score-card">
+        <div class="card-title"><span class="dot"></span>2050 STABILITY SCORE</div>
+        <div class="gauge-outer">
+          <svg class="gauge-svg" viewBox="0 0 200 200">
+            <defs>
+              <linearGradient id="gGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#ff2d55"/>
+                <stop offset="45%" stop-color="#ffaa00"/>
+                <stop offset="100%" stop-color="#00ff88"/>
+              </linearGradient>
+            </defs>
+            <circle class="g-track" cx="100" cy="100" r="80"/>
+            <circle class="g-fill" id="gauge-arc" cx="100" cy="100" r="80" stroke="url(#gGrad)"/>
+          </svg>
+          <div class="gauge-inner">
+            <div class="g-num" id="score-big">--</div>
+            <div class="g-label">/ 100</div>
+          </div>
+        </div>
+        <div class="risk-pill" id="risk-pill"><span class="pip"></span><span id="risk-txt">SCANNING</span></div>
+        <div class="sub-scores">
+          <div class="ss-box"><div class="ss-num" id="ss-econ" style="color:var(--accent)">--</div><div class="ss-lbl">ECONOMIC</div></div>
+          <div class="ss-box"><div class="ss-num" id="ss-env" style="color:var(--green)">--</div><div class="ss-lbl">ENVIRON.</div></div>
+          <div class="ss-box"><div class="ss-num" id="ss-pop" style="color:var(--accent2)">--</div><div class="ss-lbl">POP. PRESS.</div></div>
+        </div>
+        <div class="accel-badge">
+          <div class="accel-title">// TRAJECTORY TO 2050</div>
+          <div class="accel-val" id="accel-val">—</div>
+        </div>
+      </div>
+
+      <!-- METRICS -->
+      <div class="card metrics-panel">
+        <div class="card-title"><span class="dot"></span>LIVE INDICATORS</div>
+        <div class="metric-row">
+          <div class="mr-icon">💰</div>
+          <div class="mr-body">
+            <div class="mr-name">GDP PER CAPITA</div>
+            <div class="mr-val" id="m-gdp">--</div>
+            <div class="mr-sub">Economic resilience index</div>
+            <div class="mr-bar-bg"><div class="mr-bar-fill" id="b-gdp" style="background:var(--accent)"></div></div>
+          </div>
+          <div class="mr-right"><canvas class="sparkline-canvas" id="sp-gdp"></canvas></div>
+        </div>
+        <div class="metric-row">
+          <div class="mr-icon">🏭</div>
+          <div class="mr-body">
+            <div class="mr-name">CO₂ PER CAPITA (t)</div>
+            <div class="mr-val" id="m-co2">--</div>
+            <div class="mr-sub">Carbon emission burden</div>
+            <div class="mr-bar-bg"><div class="mr-bar-fill" id="b-co2" style="background:var(--danger)"></div></div>
+          </div>
+          <div class="mr-right"><canvas class="sparkline-canvas" id="sp-co2"></canvas></div>
+        </div>
+        <div class="metric-row">
+          <div class="mr-icon">🌫️</div>
+          <div class="mr-body">
+            <div class="mr-name">AIR QUALITY (PM2.5)</div>
+            <div class="mr-val" id="m-aqi">--</div>
+            <div class="mr-sub">Atmospheric pollution load</div>
+            <div class="mr-bar-bg"><div class="mr-bar-fill" id="b-aqi" style="background:var(--warn)"></div></div>
+          </div>
+          <div class="mr-right"><canvas class="sparkline-canvas" id="sp-aqi"></canvas></div>
+        </div>
+        <div class="metric-row">
+          <div class="mr-icon">👥</div>
+          <div class="mr-body">
+            <div class="mr-name">POPULATION PRESSURE</div>
+            <div class="mr-val" id="m-pop">--</div>
+            <div class="mr-sub" id="m-pop-sub">Demographic stress factor</div>
+            <div class="mr-bar-bg"><div class="mr-bar-fill" id="b-pop" style="background:var(--accent2)"></div></div>
+          </div>
+        </div>
+        <div class="metric-row">
+          <div class="mr-icon">📊</div>
+          <div class="mr-body">
+            <div class="mr-name">GLOBAL GDP PERCENTILE</div>
+            <div class="mr-val" id="m-gdp-pct">--</div>
+            <div class="mr-sub">Relative economic standing</div>
+            <div class="mr-bar-bg"><div class="mr-bar-fill" id="b-gdp-pct" style="background:var(--green)"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GLOBAL RANK -->
+      <div class="card rank-panel">
+        <div class="card-title"><span class="dot"></span>GLOBAL RANKING</div>
+        <div id="rank-list"></div>
+      </div>
+
+    </div><!-- /grid-top -->
+
+    <!-- MID GRID -->
+    <div class="grid-mid stagger-3">
+      <div class="card radar-card">
+        <div class="card-title"><span class="dot"></span>COMPOSITE RISK RADAR</div>
+        <canvas id="radarChart"></canvas>
+      </div>
+      <div class="card trend-card">
+        <div class="card-title"><span class="dot"></span>10-YEAR TREND PROJECTION</div>
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+
+    <!-- BOT GRID -->
+    <div class="grid-bot stagger-4">
+
+      <!-- CLIMATE STRESS INDEX -->
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>CLIMATE STRESS INDEX</div>
+        <div class="stress-meter">
+          <div class="stress-row">
+            <div class="stress-icon">🌡️</div>
+            <div class="stress-lbl">THERMAL PRESSURE</div>
+            <div class="stress-bar-bg"><div class="stress-bar-fill" id="csi-thermal" style="background:var(--danger)"></div></div>
+            <div class="stress-num" id="csi-thermal-n">--</div>
+          </div>
+          <div class="stress-row">
+            <div class="stress-icon">💨</div>
+            <div class="stress-lbl">CARBON LOAD</div>
+            <div class="stress-bar-bg"><div class="stress-bar-fill" id="csi-carbon" style="background:var(--warn)"></div></div>
+            <div class="stress-num" id="csi-carbon-n">--</div>
+          </div>
+          <div class="stress-row">
+            <div class="stress-icon">🌊</div>
+            <div class="stress-lbl">RESOURCE STRESS</div>
+            <div class="stress-bar-bg"><div class="stress-bar-fill" id="csi-resource" style="background:var(--accent2)"></div></div>
+            <div class="stress-num" id="csi-resource-n">--</div>
+          </div>
+          <div class="stress-row">
+            <div class="stress-icon">🏙️</div>
+            <div class="stress-lbl">URBAN PRESSURE</div>
+            <div class="stress-bar-bg"><div class="stress-bar-fill" id="csi-urban" style="background:var(--accent)"></div></div>
+            <div class="stress-num" id="csi-urban-n">--</div>
+          </div>
+        </div>
+        <div class="csi-total">
+          <div class="csi-total-num" id="csi-total-num">--</div>
+          <div class="csi-total-lbl">COMPOSITE STRESS SCORE</div>
+        </div>
+      </div>
+
+      <!-- COMPARISON -->
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>COMPARATIVE INTELLIGENCE</div>
+        <div class="compare-tabs">
+          <div class="ctab active" onclick="switchTab(this,'global')">GLOBAL AVG</div>
+          <div class="ctab" onclick="switchTab(this,'regional')">REGIONAL</div>
+          <div class="ctab" onclick="switchTab(this,'top10')">TOP 10</div>
+        </div>
+        <div id="compare-content"></div>
+      </div>
+
+      <!-- 2050 PROJECTION -->
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>2050 TRAJECTORY</div>
+        <div id="proj-rows"></div>
+        <div style="margin-top:16px;padding:12px;background:rgba(255,255,255,0.02);border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.8;color:var(--muted)">
+          <div style="color:var(--accent);margin-bottom:4px;letter-spacing:2px">// TREND LOGIC</div>
+          <div>CAGR model applied to</div>
+          <div>10-year historical data</div>
+          <div>Projected: 2025 → 2050</div>
+          <div style="margin-top:8px;color:var(--text)" id="proj-verdict">—</div>
+        </div>
+      </div>
+
+    </div><!-- /grid-bot -->
+
+    <!-- NARRATIVE -->
+    <div class="narrative-card stagger-4">
+      <div class="narrative-header">
+        <div class="ai-indicator"><div class="ai-pulse"></div><div class="ai-label">AI PLANETARY ASSESSMENT</div></div>
+        <div class="nar-timestamp" id="nar-ts">—</div>
+      </div>
+      <p id="narrative-text">Initializing intelligence module...</p>
+      <div class="policy-grid" id="policy-grid"></div>
+    </div>
+
+  </div><!-- /results -->
+
+  <footer>
+    MISSION: EARTH 2050 &nbsp;|&nbsp; PLANETARY INTELLIGENCE SYSTEM
+    <div class="footer-apis">
+      <span class="fapi">▸ WORLD BANK API — Economic & Carbon Data</span>
+      <span class="fapi">▸ OPENAQ API — Real-time Air Quality</span>
+      <span class="fapi">▸ RESTCOUNTRIES API — Nation Metadata</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+// CURSOR
+// ════════════════════════════════════════════════════
+const cursor = document.getElementById('cursor');
+const cdot = document.getElementById('cursor-dot');
+let mx=0,my=0,cx=0,cy=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cdot.style.left=mx+'px';cdot.style.top=my+'px'});
+(function animCursor(){cx+=(mx-cx)*0.15;cy+=(my-cy)*0.15;cursor.style.left=(cx-10)+'px';cursor.style.top=(cy-10)+'px';requestAnimationFrame(animCursor)})();
+document.querySelectorAll('button,select,.dbtn,.ctab').forEach(el=>{
+  el.addEventListener('mouseenter',()=>cursor.style.transform='scale(2)');
+  el.addEventListener('mouseleave',()=>cursor.style.transform='scale(1)');
+});
+
+// ════════════════════════════════════════════════════
+// STARFIELD CANVAS
+// ════════════════════════════════════════════════════
+(function(){
+  const c=document.getElementById('bg-canvas'),ctx=c.getContext('2d');
+  let stars=[],nw,nh;
+  function resize(){c.width=nw=window.innerWidth;c.height=nh=window.innerHeight;initStars()}
+  function initStars(){
+    stars=[];
+    for(let i=0;i<220;i++) stars.push({
+      x:Math.random()*nw,y:Math.random()*nh,
+      r:Math.random()*1.2+0.2,a:Math.random(),
+      sp:Math.random()*0.4+0.1,dir:Math.random()>0.5?1:-1
+    });
+  }
+  function draw(){
+    ctx.clearRect(0,0,nw,nh);
+    const g=ctx.createRadialGradient(nw/2,nh/2,0,nw/2,nh/2,nw);
+    g.addColorStop(0,'#050d1a');g.addColorStop(1,'#02060d');
+    ctx.fillStyle=g;ctx.fillRect(0,0,nw,nh);
+    // Grid
+    ctx.strokeStyle='rgba(0,229,255,0.025)';ctx.lineWidth=1;
+    for(let x=0;x<nw;x+=100){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,nh);ctx.stroke()}
+    for(let y=0;y<nh;y+=100){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(nw,y);ctx.stroke()}
+    // Stars
+    stars.forEach(s=>{
+      s.a+=s.dir*s.sp*0.006;
+      if(s.a>1||s.a<0.05)s.dir*=-1;
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(180,220,255,${s.a})`;ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',resize);resize();draw();
+})();
+
+// Clock
+setInterval(()=>{
+  const d=new Date();
+  document.getElementById('h-time').textContent=
+    d.getUTCHours().toString().padStart(2,'0')+':'+
+    d.getUTCMinutes().toString().padStart(2,'0');
+},1000);
+
+// ════════════════════════════════════════════════════
+// DATA STORE
+// ════════════════════════════════════════════════════
+const COUNTRIES = {
+  NO:{name:"Norway",flag:"🇳🇴",capital:"Oslo",pop:5400000,region:"Europe",currency:"NOK",iso2:"NO"},
+  DE:{name:"Germany",flag:"🇩🇪",capital:"Berlin",pop:83000000,region:"Europe",currency:"EUR",iso2:"DE"},
+  AU:{name:"Australia",flag:"🇦🇺",capital:"Canberra",pop:26000000,region:"Oceania",currency:"AUD",iso2:"AU"},
+  CA:{name:"Canada",flag:"🇨🇦",capital:"Ottawa",pop:38000000,region:"Americas",currency:"CAD",iso2:"CA"},
+  GB:{name:"United Kingdom",flag:"🇬🇧",capital:"London",pop:67000000,region:"Europe",currency:"GBP",iso2:"GB"},
+  FR:{name:"France",flag:"🇫🇷",capital:"Paris",pop:68000000,region:"Europe",currency:"EUR",iso2:"FR"},
+  JP:{name:"Japan",flag:"🇯🇵",capital:"Tokyo",pop:125000000,region:"Asia",currency:"JPY",iso2:"JP"},
+  US:{name:"United States",flag:"🇺🇸",capital:"Washington D.C.",pop:331000000,region:"Americas",currency:"USD",iso2:"US"},
+  RU:{name:"Russia",flag:"🇷🇺",capital:"Moscow",pop:144000000,region:"Europe/Asia",currency:"RUB",iso2:"RU"},
+  CN:{name:"China",flag:"🇨🇳",capital:"Beijing",pop:1400000000,region:"Asia",currency:"CNY",iso2:"CN"},
+  MX:{name:"Mexico",flag:"🇲🇽",capital:"Mexico City",pop:130000000,region:"Americas",currency:"MXN",iso2:"MX"},
+  BR:{name:"Brazil",flag:"🇧🇷",capital:"Brasília",pop:215000000,region:"Americas",currency:"BRL",iso2:"BR"},
+  SA:{name:"Saudi Arabia",flag:"🇸🇦",capital:"Riyadh",pop:35000000,region:"Asia",currency:"SAR",iso2:"SA"},
+  ZA:{name:"South Africa",flag:"🇿🇦",capital:"Pretoria",pop:60000000,region:"Africa",currency:"ZAR",iso2:"ZA"},
+  IN:{name:"India",flag:"🇮🇳",capital:"New Delhi",pop:1400000000,region:"Asia",currency:"INR",iso2:"IN"},
+  ID:{name:"Indonesia",flag:"🇮🇩",capital:"Jakarta",pop:277000000,region:"Asia",currency:"IDR",iso2:"ID"},
+  EG:{name:"Egypt",flag:"🇪🇬",capital:"Cairo",pop:104000000,region:"Africa",currency:"EGP",iso2:"EG"},
+  PK:{name:"Pakistan",flag:"🇵🇰",capital:"Islamabad",pop:230000000,region:"Asia",currency:"PKR",iso2:"PK"},
+  NG:{name:"Nigeria",flag:"🇳🇬",capital:"Abuja",pop:220000000,region:"Africa",currency:"NGN",iso2:"NG"},
+  BD:{name:"Bangladesh",flag:"🇧🇩",capital:"Dhaka",pop:170000000,region:"Asia",currency:"BDT",iso2:"BD"}
+};
+
+// Curated baseline data (fallback)
+const GDP_BASE = {NO:106149,DE:48717,AU:65099,CA:52722,GB:46125,FR:43518,JP:33815,US:76399,RU:12194,CN:12720,MX:10046,BR:8917,SA:27770,ZA:6001,IN:2389,ID:4580,EG:3699,PK:1568,NG:2184,BD:2688};
+const CO2_BASE = {NO:7.5,DE:7.7,AU:14.8,CA:14.2,GB:4.7,FR:4.5,JP:8.5,US:14.2,RU:11.4,CN:8.0,MX:3.7,BR:2.2,SA:18.1,ZA:7.5,IN:1.9,ID:2.3,EG:2.3,PK:0.9,NG:0.5,BD:0.6};
+// Simulated 10-year historical GDP trend (% CAGR)
+const GDP_CAGR = {NO:1.2,DE:0.8,AU:1.5,CA:1.1,GB:0.9,FR:0.7,JP:0.3,US:1.8,RU:-0.2,CN:6.1,MX:1.2,BR:0.4,SA:1.8,ZA:0.2,IN:5.8,ID:4.2,EG:3.5,PK:2.1,NG:1.9,BD:6.5};
+const CO2_TREND = {NO:-0.8,DE:-2.1,AU:-1.2,CA:-1.0,GB:-2.8,FR:-1.9,JP:-1.5,US:-1.8,RU:0.3,CN:-0.5,MX:0.8,BR:1.2,SA:0.5,ZA:0.4,IN:3.2,ID:2.1,EG:1.8,PK:2.8,NG:1.5,BD:4.1};
+// Regional averages for comparison
+const REGIONAL_AVG = {
+  Europe:{gdp:42000,co2:6.0,aqi:15},
+  Americas:{gdp:25000,co2:5.5,aqi:18},
+  Asia:{gdp:8000,co2:4.5,aqi:35},
+  Africa:{gdp:3500,co2:1.5,aqi:28},
+  Oceania:{gdp:55000,co2:12.0,aqi:8}
+};
+const GLOBAL_AVG = {gdp:13000,co2:4.7,aqi:22};
+const TOP10_AVG = {gdp:52000,co2:9.5,aqi:12};
+
+let radarChart=null,trendChart=null;
+let currentData=null;
+let activeTab='global';
+
+// ════════════════════════════════════════════════════
+// UTILITIES
+// ════════════════════════════════════════════════════
+function norm(v,mn,mx,inv=false){
+  let n=Math.max(0,Math.min(100,((v-mn)/(mx-mn))*100));
+  return inv?100-n:n;
+}
+function fmt(n){return n>=1000000?'$'+(n/1000000).toFixed(1)+'M':n>=1000?'$'+(n/1000).toFixed(0)+'K':'$'+n.toFixed(0)}
+function fmtPop(n){return n>=1e9?(n/1e9).toFixed(2)+'B':n>=1e6?(n/1e6).toFixed(0)+'M':(n/1e3).toFixed(0)+'K'}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+function computeScore(gdp,co2,aqi,pop,code){
+  const econRaw = norm(gdp,0,80000);
+  const co2Raw = norm(co2,0,22,true);
+  const aqiRaw = norm(aqi,0,150,true);
+  const popPressure = norm(pop,1000000,1500000000,true);
+
+  // Dynamic multipliers
+  const co2Trend = CO2_TREND[code]||0;
+  const gdpCagr = GDP_CAGR[code]||0;
+  const co2Penalty = co2Trend>2?1.15:co2Trend>0?1.05:0.95;
+  const gdpBonus = gdpCagr>4?1.08:gdpCagr>2?1.03:gdpCagr<0?0.94:1;
+
+  const envScore = ((co2Raw*0.55 + aqiRaw*0.45) / co2Penalty);
+  const econScore = clamp(econRaw * gdpBonus, 0, 100);
+  const popScore = clamp(popPressure, 0, 100);
+
+  const total = clamp(Math.round(econScore*0.45 + envScore*0.40 + popScore*0.15), 0, 100);
+
+  // Projected 2050 score
+  const gdp2050 = gdp * Math.pow(1+(gdpCagr/100),25);
+  const co2_2050 = Math.max(0.1, co2 + (co2Trend/100)*co2*25);
+  const {total:proj2050} = computeScoreSimple(gdp2050, co2_2050, aqi);
+  const acceleration = proj2050 - total;
+
+  return {
+    total, econScore:Math.round(econScore),
+    envScore:Math.round(envScore), popScore:Math.round(popScore),
+    gdp2050, co2_2050, proj2050, acceleration
+  };
+}
+function computeScoreSimple(gdp,co2,aqi){
+  const e=norm(gdp,0,80000),c=norm(co2,0,22,true),a=norm(aqi,0,150,true);
+  return {total:clamp(Math.round(e*0.5+(c*0.55+a*0.45)*0.5),0,100)};
+}
+
+function getRisk(s){
+  if(s>=65)return{label:'LOW RISK',cls:'rlow'};
+  if(s>=40)return{label:'MODERATE RISK',cls:'rmod'};
+  return{label:'HIGH RISK',cls:'rhigh'};
+}
+function getColor(s){return s>=65?'#00ff88':s>=40?'#ffaa00':'#ff2d55'}
+
+// ════════════════════════════════════════════════════
+// API CALLS
+// ════════════════════════════════════════════════════
+async function fetchWB(code,indicator){
+  try{
+    const r=await fetch(`https://api.worldbank.org/v2/country/${code}/indicator/${indicator}?format=json&mrv=10`);
+    const d=await r.json();
+    if(d[1]){
+      const vals=d[1].filter(x=>x.value!==null).map(x=>({year:x.date,val:x.value}));
+      return vals;
+    }
+  }catch(e){}
+  return null;
+}
+
+async function fetchAQ(code){
+  try{
+    const r=await fetch(`https://api.openaq.org/v2/latest?country_id=${code}&limit=20&parameter=pm25`,{headers:{'Accept':'application/json'}});
+    const d=await r.json();
+    if(d.results&&d.results.length>0){
+      let vals=[];
+      d.results.forEach(loc=>loc.measurements.forEach(m=>{if(m.parameter==='pm25'&&m.value>0&&m.value<500)vals.push(m.value)}));
+      if(vals.length>0)return vals.reduce((a,b)=>a+b,0)/vals.length;
+    }
+  }catch(e){}
+  return null;
+}
+
+// ════════════════════════════════════════════════════
+// SPARKLINES
+// ════════════════════════════════════════════════════
+function drawSparkline(id,data,color){
+  const canvas=document.getElementById(id);
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  canvas.width=90;canvas.height=28;
+  if(!data||data.length<2){ctx.clearRect(0,0,90,28);return}
+  const mn=Math.min(...data),mx=Math.max(...data),rng=mx-mn||1;
+  ctx.clearRect(0,0,90,28);
+  ctx.beginPath();
+  data.forEach((v,i)=>{
+    const x=(i/(data.length-1))*84+3;
+    const y=28-((v-mn)/rng)*22-3;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.stroke();
+  // Fill
+  ctx.lineTo(87,28);ctx.lineTo(3,28);ctx.closePath();
+  ctx.fillStyle=color+'15';ctx.fill();
+  // Dot at end
+  const lx=87,ly=28-((data[data.length-1]-mn)/rng)*22-3;
+  ctx.beginPath();ctx.arc(lx,ly,2.5,0,Math.PI*2);
+  ctx.fillStyle=color;ctx.fill();
+}
+
+// ════════════════════════════════════════════════════
+// CHARTS
+// ════════════════════════════════════════════════════
+function buildRadar(econ,env,pop,aqi100,co2_100){
+  if(radarChart)radarChart.destroy();
+  const ctx=document.getElementById('radarChart').getContext('2d');
+  radarChart=new Chart(ctx,{
+    type:'radar',
+    data:{
+      labels:['Economic\nStrength','Carbon\nReduction','Air\nQuality','Population\nStability','Composite\nResilience'],
+      datasets:[{
+        label:'Country Profile',
+        data:[econ,co2_100,aqi100,pop,Math.round((econ+co2_100+aqi100+pop)/4)],
+        backgroundColor:'rgba(0,229,255,0.08)',
+        borderColor:'rgba(0,229,255,0.7)',
+        borderWidth:2,
+        pointBackgroundColor:'rgba(0,229,255,1)',
+        pointRadius:4,
+        pointHoverRadius:6,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:true,
+      plugins:{legend:{display:false}},
+      scales:{r:{
+        min:0,max:100,
+        grid:{color:'rgba(255,255,255,0.06)'},
+        angleLines:{color:'rgba(255,255,255,0.06)'},
+        ticks:{display:false},
+        pointLabels:{color:'#4a6a8a',font:{family:'JetBrains Mono',size:9}}
+      }}
+    }
+  });
+}
+
+function buildTrend(code,currentScore,proj2050,gdpVals,co2Vals){
+  if(trendChart)trendChart.destroy();
+  const ctx=document.getElementById('trendChart').getContext('2d');
+  const cagr=GDP_CAGR[code]||1;
+  const co2tr=CO2_TREND[code]||0;
+  // Build projection years
+  const years=['2015','2017','2019','2021','2023','2025','2028','2032','2036','2040','2045','2050'];
+  const scores=years.map((yr,i)=>{
+    const yrs=parseInt(yr)-2023;
+    const g2=GDP_BASE[code]*(1+cagr/100*yrs);
+    const c2=Math.max(0.1,CO2_BASE[code]+(co2tr/100)*CO2_BASE[code]*yrs);
+    return computeScoreSimple(g2,c2,25).total;
+  });
+  const grad=ctx.createLinearGradient(0,0,0,260);
+  grad.addColorStop(0,'rgba(0,229,255,0.3)');
+  grad.addColorStop(1,'rgba(0,229,255,0.0)');
+
+  trendChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:years,
+      datasets:[{
+        label:'Stability Score',
+        data:scores,
+        borderColor:'rgba(0,229,255,0.8)',
+        backgroundColor:grad,
+        borderWidth:2,
+        fill:true,
+        tension:0.4,
+        pointBackgroundColor:scores.map((_,i)=>i<5?'rgba(0,229,255,0.5)':'rgba(0,229,255,1)'),
+        pointRadius:scores.map((_,i)=>i===scores.length-1?5:3),
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:true,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'rgba(6,15,26,0.95)',
+          borderColor:'rgba(0,229,255,0.3)',borderWidth:1,
+          titleColor:'#00e5ff',bodyColor:'#d0e8ff',
+          titleFont:{family:'JetBrains Mono',size:10},
+          bodyFont:{family:'JetBrains Mono',size:11},
+          callbacks:{label:ctx=>`Score: ${ctx.raw}/100`}
+        }
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#3a5a7a',font:{family:'JetBrains Mono',size:8}}},
+        y:{min:0,max:100,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#3a5a7a',font:{family:'JetBrains Mono',size:8},stepSize:20}}
+      }
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════
+// GLOBAL RANKING
+// ════════════════════════════════════════════════════
+function buildRanking(currentCode, currentScore){
+  // Compute scores for all countries
+  let ranked=Object.keys(COUNTRIES).map(c=>{
+    const {total}=computeScore(GDP_BASE[c]||5000,CO2_BASE[c]||3,25,COUNTRIES[c].pop,c);
+    return {code:c,score:total,info:COUNTRIES[c]};
+  });
+  ranked.sort((a,b)=>b.score-a.score);
+  const maxScore=ranked[0].score;
+  const currentRank=ranked.findIndex(r=>r.code===currentCode)+1;
+  // Show top 8 + current if not in top 8
+  let toShow=ranked.slice(0,8);
+  if(!toShow.find(r=>r.code===currentCode)&&currentRank>0){
+    toShow[7]=ranked[currentRank-1];
+  }
+  const html=toShow.map((r,i)=>{
+    const isCurrent=r.code===currentCode;
+    const color=getColor(r.score);
+    return `<div class="rank-item${isCurrent?' current-country':''}">
+      <div class="rank-pos">${i+1}</div>
+      <div class="rank-flag">${r.info.flag}</div>
+      <div class="rank-name">${r.info.name}</div>
+      <div class="rank-score" style="color:${color}">${r.score}</div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${(r.score/maxScore)*100}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('rank-list').innerHTML=html;
+  // GDP percentile
+  const gdpRanked=Object.keys(GDP_BASE).sort((a,b)=>GDP_BASE[a]-GDP_BASE[b]);
+  const gdpIdx=gdpRanked.indexOf(currentCode);
+  const pct=Math.round((gdpIdx/gdpRanked.length)*100);
+  return {rank:currentRank,total:ranked.length,percentile:pct};
+}
+
+// ════════════════════════════════════════════════════
+// COMPARISON
+// ════════════════════════════════════════════════════
+function buildComparison(code,gdp,co2,aqi){
+  const info=COUNTRIES[code];
+  const reg=info.region.split('/')[0];
+  const refs={global:GLOBAL_AVG,regional:REGIONAL_AVG[reg]||GLOBAL_AVG,top10:TOP10_AVG};
+
+  function renderComparison(refKey){
+    const ref=refs[refKey];
+    const rows=[
+      {lbl:'GDP/CAPITA',val:fmt(gdp),myV:gdp,refV:ref.gdp,higher:true},
+      {lbl:'CO₂/CAPITA',val:co2.toFixed(1)+'t',myV:co2,refV:ref.co2,higher:false},
+      {lbl:'AIR QUALITY',val:aqi.toFixed(0)+'µg',myV:aqi,refV:ref.aqi,higher:false},
+    ];
+    return rows.map(r=>{
+      const diff=((r.myV-r.refV)/r.refV)*100;
+      const better=r.higher?diff>0:diff<0;
+      const sign=diff>0?'+':'';
+      const cls=better?'delta-pos':Math.abs(diff)<5?'delta-neu':'delta-neg';
+      return `<div class="compare-item">
+        <div class="ci-label">${r.lbl}</div>
+        <div class="ci-val">${r.val}</div>
+        <div class="ci-delta ${cls}">${sign}${diff.toFixed(0)}%</div>
+      </div>`;
+    }).join('');
+  }
+
+  window._compareRender=renderComparison;
+  document.getElementById('compare-content').innerHTML=renderComparison(activeTab);
+}
+
+function switchTab(el,key){
+  activeTab=key;
+  document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  if(window._compareRender) document.getElementById('compare-content').innerHTML=window._compareRender(key);
+}
+
+// ════════════════════════════════════════════════════
+// PROJECTION
+// ════════════════════════════════════════════════════
+function buildProjection(code,currentScore,proj2050,gdp2050,co2_2050){
+  const cagr=GDP_CAGR[code]||0;
+  const co2tr=CO2_TREND[code]||0;
+  const proj2030=computeScoreSimple(GDP_BASE[code]*Math.pow(1+cagr/100,5),Math.max(0.1,CO2_BASE[code]+(co2tr/100)*CO2_BASE[code]*5),25).total;
+  const proj2040=computeScoreSimple(GDP_BASE[code]*Math.pow(1+cagr/100,15),Math.max(0.1,CO2_BASE[code]+(co2tr/100)*CO2_BASE[code]*15),25).total;
+
+  const years=[
+    {yr:'NOW',sc:currentScore},
+    {yr:'2030',sc:proj2030},
+    {yr:'2040',sc:proj2040},
+    {yr:'2050',sc:proj2050},
+  ];
+  const html=years.map(y=>{
+    const c=getColor(y.sc);
+    const trend=y.sc>currentScore?'↑':y.sc<currentScore?'↓':'→';
+    return `<div class="proj-row">
+      <div class="proj-yr">${y.yr}</div>
+      <div class="proj-bar-bg"><div class="proj-bar-fill" style="width:${y.sc}%;background:${c}"></div></div>
+      <div class="proj-num" style="color:${c}">${y.sc}</div>
+      <div class="proj-trend">${y.yr!=='NOW'?trend:''}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('proj-rows').innerHTML=html;
+
+  const delta=proj2050-currentScore;
+  const verdicts=delta>10?`<span style="color:var(--green)">▲ IMPROVING TRAJECTORY — Strong positive projection toward 2050</span>`:
+    delta>0?`<span style="color:var(--accent)">▲ SLIGHT IMPROVEMENT projected by 2050</span>`:
+    delta>-10?`<span style="color:var(--warn)">→ STABLE BUT STAGNANT through 2050</span>`:
+    `<span style="color:var(--danger)">▼ DECLINING TRAJECTORY — intervention required</span>`;
+  document.getElementById('proj-verdict').innerHTML=verdicts;
+}
+
+// ════════════════════════════════════════════════════
+// CLIMATE STRESS INDEX
+// ════════════════════════════════════════════════════
+function buildCSI(co2,aqi,pop,gdp){
+  const thermal=clamp(Math.round(norm(aqi,0,150)*0.6+norm(co2,0,22)*0.4),0,100);
+  const carbon=clamp(Math.round(norm(co2,0,22)),0,100);
+  const resource=clamp(Math.round(norm(pop,0,1500000000)*0.5+norm(gdp,0,80000,true)*0.5),0,100);
+  const urban=clamp(Math.round(norm(pop,0,1500000000)*0.7+norm(aqi,0,150)*0.3),0,100);
+  const composite=clamp(Math.round((thermal+carbon+resource+urban)/4),0,100);
+
+  setTimeout(()=>{
+    document.getElementById('csi-thermal').style.width=thermal+'%';
+    document.getElementById('csi-carbon').style.width=carbon+'%';
+    document.getElementById('csi-resource').style.width=resource+'%';
+    document.getElementById('csi-urban').style.width=urban+'%';
+  },300);
+  document.getElementById('csi-thermal-n').textContent=thermal;
+  document.getElementById('csi-carbon-n').textContent=carbon;
+  document.getElementById('csi-resource-n').textContent=resource;
+  document.getElementById('csi-urban-n').textContent=urban;
+  document.getElementById('csi-total-num').textContent=composite;
+  document.getElementById('csi-total-num').style.color=getColor(100-composite);
+}
+
+// ════════════════════════════════════════════════════
+// NARRATIVE ENGINE
+// ════════════════════════════════════════════════════
+function buildNarrative(code,score,gdp,co2,aqi,gdpCagr,co2trend,proj2050,acceleration){
+  const info=COUNTRIES[code];
+  const risk=getRisk(score);
+
+  // Dynamic sentence building
+  let sentences=[];
+  // Economic
+  if(gdpCagr>4) sentences.push(`<strong>${info.name}</strong>'s economy is expanding at a <span class="highlight">rapid ${gdpCagr.toFixed(1)}% CAGR</span>, signaling strong economic momentum that can fund climate adaptation.`);
+  else if(gdpCagr>1) sentences.push(`<strong>${info.name}</strong> maintains a <span class="highlight">steady ${gdpCagr.toFixed(1)}% growth trajectory</span>, providing moderate capacity for long-term environmental investment.`);
+  else if(gdpCagr<0) sentences.push(`<strong>${info.name}'s</strong> economy is <span class="danger-text">contracting at ${Math.abs(gdpCagr).toFixed(1)}% annually</span>, severely limiting climate resilience investment capacity.`);
+  else sentences.push(`<strong>${info.name}</strong> shows <span class="highlight">sluggish economic expansion</span> at ${gdpCagr.toFixed(1)}% CAGR, constraining environmental upgrade budgets.`);
+
+  // Carbon
+  if(co2trend<-1.5) sentences.push(`Carbon emissions are <span class="highlight">decarbonizing at ${Math.abs(co2trend).toFixed(1)}% annually</span> — a strong signal of energy transition alignment.`);
+  else if(co2trend<0) sentences.push(`CO₂ trajectory shows a <span class="highlight">modest reduction of ${Math.abs(co2trend).toFixed(1)}% per year</span>, consistent with moderate climate action.`);
+  else if(co2trend>3) sentences.push(`Emissions are <span class="danger-text">accelerating +${co2trend.toFixed(1)}% annually</span>, representing a critical divergence from Paris Agreement pathways.`);
+  else sentences.push(`Carbon output is <span class="warn-text">rising +${co2trend.toFixed(1)}% per year</span>, requiring urgent policy intervention to avoid lock-in effects by 2035.`);
+
+  // AQI
+  if(aqi<15) sentences.push(`Atmospheric quality is <span class="highlight">exceptional at ${aqi.toFixed(0)} µg/m³</span> — among the cleanest in the world.`);
+  else if(aqi<35) sentences.push(`Air quality registers at ${aqi.toFixed(0)} µg/m³, within <span class="highlight">WHO acceptable thresholds</span>.`);
+  else if(aqi<80) sentences.push(`Ambient PM2.5 of ${aqi.toFixed(0)} µg/m³ <span class="warn-text">exceeds WHO guidelines</span>, indicating moderate public health and productivity risk.`);
+  else sentences.push(`Severe atmospheric pollution at ${aqi.toFixed(0)} µg/m³ represents a <span class="danger-text">critical public health emergency</span> compounding economic drag.`);
+
+  // Projection
+  const projColor=acceleration>5?'class="highlight"':acceleration<-5?'class="danger-text"':'class="warn-text"';
+  sentences.push(`Composite modeling projects a <strong ${projColor}>2050 Stability Score of ${proj2050}/100</strong> — a ${acceleration>0?'+':''}${acceleration} point ${acceleration>0?'improvement':'decline'} from current standing.`);
+
+  // Policy verdict
+  if(score>=65) sentences.push(`Mission: Earth 2050 classifies ${info.name} as a <span class="highlight">planetary stability leader</span>. Continued investment in renewables and green infrastructure will cement this trajectory.`);
+  else if(score>=40) sentences.push(`${info.name} sits at a <span class="warn-text">critical inflection point</span>. Policy decisions made in the next 5 years will determine whether it converges toward stability or accelerates into systemic risk.`);
+  else sentences.push(`Without multilateral intervention and urgent domestic climate reform, ${info.name} faces <span class="danger-text">compounding systemic fragility</span> through 2050 — making it a priority target for international climate aid.`);
+
+  document.getElementById('narrative-text').innerHTML=sentences.join(' ');
+  document.getElementById('nar-ts').textContent=new Date().toISOString().slice(0,16).replace('T',' ')+' UTC';
+
+  // Policy cards
+  const policies=score>=65?[
+    {icon:'⚡',title:'ENERGY LEADERSHIP',text:'Expand green hydrogen exports and offshore wind capacity to cement clean energy dominance.'},
+    {icon:'🌿',title:'BIODIVERSITY BONDS',text:'Issue sovereign nature bonds to finance forest protection and carbon sequestration.'},
+    {icon:'🤝',title:'CLIMATE DIPLOMACY',text:'Lead technology transfer frameworks to uplift lower-scoring nations and reduce global risk.'},
+  ]:score>=40?[
+    {icon:'🏭',title:'DECARBONIZE NOW',text:'Accelerate phase-out of fossil fuel subsidies and redirect capital toward solar and wind.'},
+    {icon:'🏙️',title:'URBAN RESILIENCE',text:'Invest in heat-resilient infrastructure and green corridors to reduce urban climate stress.'},
+    {icon:'📊',title:'CARBON PRICING',text:'Implement robust carbon pricing mechanisms to internalize environmental externalities.'},
+  ]:[
+    {icon:'🆘',title:'EMERGENCY ADAPTATION',text:'Prioritize climate adaptation finance and international aid to manage immediate environmental risks.'},
+    {icon:'🌱',title:'REFORESTATION PUSH',text:'Launch national reforestation programs to offset carbon and restore ecosystem services.'},
+    {icon:'💧',title:'RESOURCE SECURITY',text:'Urgent investment in water and food security infrastructure to buffer climate shocks.'},
+  ];
+
+  document.getElementById('policy-grid').innerHTML=policies.map(p=>`
+    <div class="policy-card">
+      <div class="policy-icon">${p.icon}</div>
+      <div class="policy-title">${p.title}</div>
+      <div class="policy-text">${p.text}</div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════
+// SCAN LOG ANIMATION
+// ════════════════════════════════════════════════════
+let scanInterval=null;
+function startScanLog(){
+  const msgs=['// Connecting to World Bank API...','// Fetching GDP time series...','// Fetching CO₂ indicators...','// Calling OpenAQ sensors...','// Running normalization engine...','// Computing composite score...','// Projecting to 2050...','// Building radar vectors...','// Generating AI assessment...'];
+  let i=0;
+  clearInterval(scanInterval);
+  scanInterval=setInterval(()=>{
+    document.getElementById('scan-log').textContent=msgs[i%msgs.length];
+    i++;
+  },600);
+}
+function stopScanLog(){clearInterval(scanInterval)}
+
+// ════════════════════════════════════════════════════
+// MAIN ANALYZE
+// ════════════════════════════════════════════════════
+async function analyze(){
+  const code=document.getElementById('country-select').value;
+  if(!code){alert('Please select a country');return}
+  const info=COUNTRIES[code];
+
+  document.getElementById('results').style.display='none';
+  document.getElementById('error-box').style.display='none';
+  document.getElementById('loading').style.display='block';
+  document.getElementById('scan-btn').disabled=true;
+  startScanLog();
+
+  try{
+    // Parallel API calls
+    const [gdpData,co2Data,aqiRaw]=await Promise.all([
+      fetchWB(code,'NY.GDP.PCAP.CD'),
+      fetchWB(code,'EN.ATM.CO2E.PC'),
+      fetchAQ(code)
+    ]);
+
+    // Extract latest values
+    const gdp=gdpData&&gdpData.length>0?gdpData[0].val:GDP_BASE[code]||5000;
+    const co2=co2Data&&co2Data.length>0?co2Data[0].val:CO2_BASE[code]||3;
+    const aqi=aqiRaw!==null?parseFloat(aqiRaw.toFixed(1)):15+Math.random()*40;
+
+    // Historical sparkline data
+    const gdpSpark=gdpData?gdpData.map(v=>v.val).reverse():[...Array(8)].map((_,i)=>gdp*(1-i*0.01));
+    const co2Spark=co2Data?co2Data.map(v=>v.val).reverse():[...Array(8)].map((_,i)=>co2*(1+i*0.005));
+
+    const cagr=GDP_CAGR[code]||0;
+    const co2tr=CO2_TREND[code]||0;
+    const pop=info.pop;
+
+    // Score
+    const scores=computeScore(gdp,co2,aqi,pop,code);
+
+    stopScanLog();
+    document.getElementById('loading').style.display='none';
+
+    // ── POPULATE UI ──
+    // Country bar
+    document.getElementById('cb-flag').textContent=info.flag;
+    document.getElementById('cb-name').textContent=info.name;
+    document.getElementById('cb-sub').textContent=`${info.capital} • ${fmtPop(pop)} people • ${info.region} • ${info.currency}`;
+
+    // Gauge
+    const arc=document.getElementById('gauge-arc');
+    const circum=2*Math.PI*80;
+    const offset=circum-(scores.total/100)*circum;
+    document.getElementById('score-big').textContent=scores.total;
+    document.getElementById('score-big').style.color=getColor(scores.total);
+    setTimeout(()=>{arc.style.strokeDashoffset=offset},100);
+
+    // Risk pill
+    const risk=getRisk(scores.total);
+    const pill=document.getElementById('risk-pill');
+    pill.className=`risk-pill ${risk.cls}`;
+    document.getElementById('risk-txt').textContent=risk.label;
+
+    // Sub scores
+    document.getElementById('ss-econ').textContent=scores.econScore;
+    document.getElementById('ss-env').textContent=scores.envScore;
+    document.getElementById('ss-pop').textContent=scores.popScore;
+
+    // Acceleration
+    const acc=scores.acceleration;
+    const accColor=acc>5?'#00ff88':acc>0?'#00e5ff':acc>-5?'#ffaa00':'#ff2d55';
+    const accIcon=acc>5?'▲ ACCELERATING':acc>0?'▲ IMPROVING':'→ '+(Math.abs(acc)<5?'STABLE':'▼ DECLINING');
+    document.getElementById('accel-val').innerHTML=`<span style="color:${accColor}">${accIcon}</span> &nbsp;${acc>0?'+':''}${Math.round(acc)} pts projected to 2050`;
+
+    // Metrics
+    document.getElementById('m-gdp').textContent=fmt(gdp);
+    document.getElementById('m-co2').textContent=co2.toFixed(2)+' t/capita';
+    document.getElementById('m-aqi').textContent=aqi.toFixed(1)+' µg/m³';
+    document.getElementById('m-pop').textContent=fmtPop(pop);
+    document.getElementById('m-pop-sub').textContent=`${info.capital} metro • ${info.region}`;
+
+    // Bars
+    setTimeout(()=>{
+      document.getElementById('b-gdp').style.width=norm(gdp,0,80000)+'%';
+      document.getElementById('b-co2').style.width=norm(co2,0,22)+'%';
+      document.getElementById('b-aqi').style.width=norm(aqi,0,150)+'%';
+      document.getElementById('b-pop').style.width=norm(pop,0,1500000000)+'%';
+    },200);
+
+    // GDP percentile
+    const {rank,total:totalC,percentile}=buildRanking(code,scores.total);
+    document.getElementById('m-gdp-pct').textContent=`#${rank} of ${totalC} (Top ${100-percentile}%)`;
+    setTimeout(()=>{document.getElementById('b-gdp-pct').style.width=(100-percentile)+'%'},200);
+
+    // Sparklines
+    drawSparkline('sp-gdp',gdpSpark,'#00e5ff');
+    drawSparkline('sp-co2',co2Spark,'#ff2d55');
+    drawSparkline('sp-aqi',[...Array(8)].map((_,i)=>aqi*(0.9+i*0.015)).reverse(),'#ffaa00');
+
+    // Radar
+    buildRadar(
+      scores.econScore,
+      Math.round(norm(co2,0,22,true)),
+      Math.round(norm(aqi,0,150,true)),
+      scores.popScore,
+      Math.round(norm(co2,0,22,true))
+    );
+
+    // Trend chart
+    buildTrend(code,scores.total,scores.proj2050,gdpSpark,co2Spark);
+
+    // Climate Stress
+    buildCSI(co2,aqi,pop,gdp);
+
+    // Comparison
+    buildComparison(code,gdp,co2,aqi);
+
+    // Projection
+    buildProjection(code,scores.total,scores.proj2050,scores.gdp2050,scores.co2_2050);
+
+    // Narrative
+    buildNarrative(code,scores.total,gdp,co2,aqi,cagr,co2tr,scores.proj2050,Math.round(scores.acceleration));
+
+    document.getElementById('results').style.display='block';
+    currentData={code,gdp,co2,aqi,scores};
+
+  }catch(err){
+    stopScanLog();
+    document.getElementById('loading').style.display='none';
+    const eb=document.getElementById('error-box');
+    eb.style.display='block';
+    eb.textContent=`// ERROR: ${err.message}`;
+  }
+  document.getElementById('scan-btn').disabled=false;
+}
+
+function quickDemo(code){
+  document.getElementById('country-select').value=code;
+  analyze();
+}
+document.getElementById('country-select').addEventListener('keydown',e=>{if(e.key==='Enter')analyze()});
+</script>
+</body>
+</html>
